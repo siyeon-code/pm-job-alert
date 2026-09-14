@@ -1,0 +1,33 @@
+# 임시 점검용: GitHub Actions 컴퓨터에서 각 사이트에 접속되는지 확인 (확인 후 삭제 예정)
+# 비밀값은 쓰지 않고, 접속 가능 여부와 걸린 시간만 출력함
+name: 네트워크 점검 (임시)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 실행 컴퓨터 위치
+        run: |
+          echo "공인 IP 국가: $(curl -s -m 10 https://ipinfo.io/country || echo 확인실패)"
+          echo "공인 IP 소속: $(curl -s -m 10 https://ipinfo.io/org || echo 확인실패)"
+
+      - name: 사이트별 접속 확인 (각 15초 제한)
+        run: |
+          for url in \
+            https://apis.data.go.kr/ \
+            https://www.data.go.kr/ \
+            http://opendata.alio.go.kr/ \
+            https://opendata.alio.go.kr/ \
+            https://job.alio.go.kr/ \
+            https://www.incruit.com/rss/job.asp \
+            https://hooks.slack.com/ ; do
+            result=$(curl -s -o /dev/null -m 15 -w "HTTP %{http_code} / 연결 %{time_connect}초 / 전체 %{time_total}초" "$url" 2>&1) || result="실패: $result (curl 종료코드 $?)"
+            echo "$url → $result"
+          done
