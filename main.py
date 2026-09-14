@@ -16,6 +16,7 @@ import sent_jobs
 import slack_notify
 from incruit_rss import fetch_incruit_jobs
 from job_filter import KST, filter_jobs
+from public_jobs import fetch_public_jobs
 from saramin_api import load_env_file
 
 
@@ -26,6 +27,10 @@ def collect_jobs():
         incruit_jobs, incruit_errors = fetch_incruit_jobs()
         jobs += incruit_jobs
         errors += incruit_errors
+    if config.USE_PUBLIC_JOBS_API:
+        public_jobs, public_errors = fetch_public_jobs()
+        jobs += public_jobs
+        errors += public_errors
     # 사람인은 access-key를 받아 1·2단계를 마친 뒤 여기에 추가
     return jobs, errors
 

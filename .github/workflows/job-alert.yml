@@ -40,6 +40,7 @@ jobs:
           # 코드와 로그에는 실제 값이 나오지 않음
           SARAMIN_ACCESS_KEY: ${{ secrets.SARAMIN_ACCESS_KEY }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
         run: python main.py --send
 
       - name: 보낸 공고 기록 저장

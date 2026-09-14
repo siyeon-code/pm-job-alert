@@ -163,3 +163,26 @@ NO_JOBS_MESSAGE = "오늘은 조건에 맞는 공고가 없습니다"
 # 중복 방지: 보낸 공고 번호를 적어두는 파일과 기록 보관 기간(일)
 SENT_JOBS_FILE = "sent_jobs.json"
 SENT_JOBS_KEEP_DAYS = 60
+
+# =========================================================
+# 공공기관 채용정보 API (재정경제부, 공공데이터포털)
+# 문서: https://www.data.go.kr/data/15125273/openapi.do
+# 코드는 참고문서 "코드 정의서 v1.2"에서 확인
+# =========================================================
+USE_PUBLIC_JOBS_API = True  # False로 바꾸면 공공기관 공고는 받지 않음
+
+PUBLIC_JOBS_API_URL = "https://apis.data.go.kr/1051000/recruitment/list"
+PUBLIC_JOBS_PAGE_SIZE = 300  # 서울·경기 진행 중 공고가 200건 안팎이라 보통 1번 호출로 다 받음
+PUBLIC_JOBS_MAX_PAGES = 5    # 공고가 많아져도 하루 호출이 5번을 넘지 않게 제한
+
+# 근무지: 서울, 경기
+PUBLIC_JOBS_REGION_CODES = {"R3010": "서울", "R3017": "경기"}
+
+# 고용형태: 청년인턴 계열만
+PUBLIC_JOBS_INTERN_CODES = {"R1050": "청년인턴", "R1060": "청년인턴(체험형)", "R1070": "청년인턴(채용형)"}
+
+# 직무(NCS): 경영·회계·사무, 정보통신 ("사업관리"는 현장직 공고가 섞여서 뺌)
+PUBLIC_JOBS_NCS_CODES = {"R600002": "경영.회계.사무", "R600020": "정보통신"}
+
+# 채용구분: 신입, 신입+경력 (경력만 뽑는 공고는 제외)
+PUBLIC_JOBS_ENTRY_CODES = {"R2010": "신입", "R2030": "신입+경력"}

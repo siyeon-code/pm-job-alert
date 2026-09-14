@@ -122,6 +122,17 @@ def date_section(job, now):
 
 def classify(job, now, check_dates=True):
     """공고 1건을 검사해서 (통과한 공고, None) 또는 (None, 버린 이유)를 돌려줌"""
+    # 공공기관처럼 수집 단계에서 코드로 이미 거른 공고는 분류가 정해져 있어서 날짜만 판단
+    if job.get("fixed_category"):
+        section = date_section(job, now)
+        if check_dates and section is None:
+            return None, "오늘 마감·새로 등록 아님"
+        result = dict(job)
+        result["category"] = job["fixed_category"]
+        result["section"] = section if check_dates else SECTION_ANY_DATE
+        result["matched"] = job.get("matched", [])
+        return result, None
+
     title = job["title"]
 
     excluded = find_keywords(title, config.EXCLUDE_KEYWORDS)
