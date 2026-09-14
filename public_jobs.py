@@ -7,6 +7,7 @@
 하는 일
   1) 서울·경기 근무, 진행 중인 공고를 전부 받음 (보통 호출 1회)
      - API의 공고 시작일 검색 조건은 결과가 이상해서 쓰지 않고, 날짜는 3단계 필터에서 판단
+     - 연결이 순간적으로 안 되면 몇 번 다시 시도함
   2) 아래 조건을 모두 만족하는 공고만 남김
      (공공기관 공고는 제목에 직무가 거의 안 나와서 제목 키워드 대신 코드로 거름)
      - 고용형태: 청년인턴 / 청년인턴(체험형) / 청년인턴(채용형)
@@ -18,6 +19,7 @@
   python3 public_jobs.py
 """
 import os
+import time
 from datetime import datetime
 
 import requests
@@ -42,6 +44,22 @@ def parse_ymd(text):
         return None
 
 
+def request_with_retry(params, service_key):
+    """API를 호출함. 연결이 순간적으로 안 될 때를 대비해 정해진 횟수만큼 다시 시도"""
+    last_error = None
+    for attempt in range(1, config.PUBLIC_JOBS_RETRIES + 1):
+        try:
+            # timeout=(연결 대기 15초, 응답 대기 60초)
+            return requests.get(config.PUBLIC_JOBS_API_URL, params=params, timeout=(15, 60))
+        except requests.RequestException as error:
+            last_error = error
+            if attempt < config.PUBLIC_JOBS_RETRIES:
+                time.sleep(config.PUBLIC_JOBS_RETRY_WAIT_SECONDS)
+    # 에러 메시지에 키가 들어간 주소가 섞일 수 있어서 키를 가림
+    message = str(last_error).replace(service_key, "****")
+    raise RuntimeError(f"공공기관 API 네트워크 오류 ({config.PUBLIC_JOBS_RETRIES}번 시도): {message}")
+
+
 def fetch_all_ongoing(service_key):
     """진행 중인 서울·경기 공고를 모두 받아 목록으로 돌려줌. 실패하면 RuntimeError를 냄"""
     items, page = [], 1
@@ -54,11 +72,7 @@ def fetch_all_ongoing(service_key):
             "numOfRows": config.PUBLIC_JOBS_PAGE_SIZE,
             "pageNo": page,
         }
-        try:
-            response = requests.get(config.PUBLIC_JOBS_API_URL, params=params, timeout=60)
-        except requests.RequestException as error:
-            # 에러 메시지에 키가 들어간 주소가 섞일 수 있어서 키를 가림
-            raise RuntimeError(f"공공기관 API 네트워크 오류: {str(error).replace(service_key, '****')}") from None
+        response = request_with_retry(params, service_key)
         try:
             data = response.json()
         except ValueError:

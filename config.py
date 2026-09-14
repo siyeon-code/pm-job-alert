@@ -175,6 +175,11 @@ PUBLIC_JOBS_API_URL = "https://apis.data.go.kr/1051000/recruitment/list"
 PUBLIC_JOBS_PAGE_SIZE = 300  # 서울·경기 진행 중 공고가 200건 안팎이라 보통 1번 호출로 다 받음
 PUBLIC_JOBS_MAX_PAGES = 5    # 공고가 많아져도 하루 호출이 5번을 넘지 않게 제한
 
+# 연결이 순간적으로 안 될 때 다시 시도 (2026-09-14 GitHub Actions에서 한 번 연결 시간 초과가 있었고,
+# 바로 다시 점검했을 때는 5번 모두 정상이었음)
+PUBLIC_JOBS_RETRIES = 3              # 최대 시도 횟수
+PUBLIC_JOBS_RETRY_WAIT_SECONDS = 5   # 다시 시도하기 전에 기다리는 시간(초)
+
 # 근무지: 서울, 경기
 PUBLIC_JOBS_REGION_CODES = {"R3010": "서울", "R3017": "경기"}
 
