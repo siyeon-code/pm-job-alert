@@ -1,0 +1,57 @@
+# 매일 오전 9시(한국 시간)에 채용공고를 모아 슬랙으로 보내는 자동화
+name: 채용공고 슬랙 알림
+
+on:
+  schedule:
+    # 매일 09:00 한국 시간. GitHub 사정으로 늦게 시작할 수 있음 (공식 문서)
+    - cron: "0 9 * * *"
+      timezone: "Asia/Seoul"
+  # Actions 화면의 "Run workflow" 버튼으로 바로 실행해 볼 수 있게 함
+  workflow_dispatch:
+
+# 보낸 공고 기록(sent_jobs.json)을 저장소에 저장하려면 쓰기 권한이 필요함
+permissions:
+  contents: write
+
+# 실행이 겹치면 기록 저장이 꼬일 수 있어서 한 번에 하나만 실행
+concurrency:
+  group: job-alert
+  cancel-in-progress: false
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 코드 받기
+        uses: actions/checkout@v7
+
+      - name: 파이썬 설치
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: 필요한 패키지 설치
+        run: pip install -r requirements.txt
+
+      - name: 공고 모아서 슬랙으로 보내기
+        env:
+          # 비밀값은 저장소 Settings > Secrets and variables > Actions 에 등록한 값을 씀
+          # 코드와 로그에는 실제 값이 나오지 않음
+          SARAMIN_ACCESS_KEY: ${{ secrets.SARAMIN_ACCESS_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python main.py --send
+
+      - name: 보낸 공고 기록 저장
+        # 앞 단계가 에러 알림을 보내고 실패로 끝나도, 이미 보낸 공고 기록은 저장
+        if: always()
+        run: |
+          if git diff --quiet -- sent_jobs.json; then
+            echo "새로 보낸 공고가 없어서 저장할 기록이 없습니다."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sent_jobs.json
+          git commit -m "보낸 공고 기록 갱신 ($(TZ=Asia/Seoul date +%Y-%m-%d))"
+          git push
